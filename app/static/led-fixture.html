@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LED status fixture — URL Health Monitor</title>
+  <script src="/static/theme.js"></script>
   <link rel="stylesheet" href="/static/style.css">
   <style>
     /* Fixture-only layout chrome; LED styles come from style.css */
@@ -28,6 +29,14 @@
         <p class="eyebrow">Fixture evidence</p>
         <h1>Status LED matrix</h1>
         <p class="sub">Presentation-only fixture. Not emitted by the live API unless noted.</p>
+      </div>
+      <div class="theme-control">
+        <label for="theme-select">Theme</label>
+        <select id="theme-select" name="theme">
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+          <option value="system">System</option>
+        </select>
       </div>
     </header>
 
