@@ -78,8 +78,7 @@ async function refresh() {
       el.dataset.id = item.id;
       // Exact main guard (also required by tests/test_monitor.py substring assertion).
       if(item.status==='UP')dot.classList.add('up');else if(item.status==='DOWN')dot.classList.add('down');
-      const ledClass = statusClass(status);
-      if (!dot.classList.contains(ledClass)) dot.classList.add(ledClass);
+      dot.classList.add(statusClass(status)); // add() ignores duplicates
       dot.setAttribute('aria-label', `Status: ${statusLabel(status)}`);
       if (label) label.textContent = statusLabel(status);
 
