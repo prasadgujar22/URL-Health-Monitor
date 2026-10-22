@@ -1,1 +1,77 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>URL Health Monitor</title><link rel="stylesheet" href="/static/style.css"></head><body><main><header><div><p class="eyebrow">SELF HOSTED MONITOR</p><h1>URL Health</h1><p class="sub">A clear view of the endpoints you depend on.</p></div><span class="live"><i></i> Automatic checks every minute</span></header><section class="add"><form id="add-form"><label for="url">Monitor a public URL</label><div class="row"><input id="url" name="url" type="url" placeholder="https://example.com" required autocomplete="url"><button type="submit">Add URL</button></div><p id="message" aria-live="polite"></p></form></section><section aria-labelledby="monitored"><div class="section-head"><h2 id="monitored">Monitored URLs</h2><button id="refresh" class="refresh" type="button">Refresh</button></div><div id="list" aria-live="polite"><div class="loading">Loading monitored URLs…</div></div></section><footer>HTTP 200–399 is healthy · Checks run every 60 seconds</footer></main><template id="card"><article class="card"><div class="status"></div><div class="details"><a class="url" target="_blank" rel="noopener noreferrer"></a><div class="meta"></div><div class="err"></div></div><button class="delete" type="button" aria-label="Delete monitored URL">Delete</button></article></template><script src="/static/app.js" defer></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>URL Health Monitor</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Self-hosted monitor</p>
+        <h1>URL Health</h1>
+        <p class="sub">Endpoints you depend on, checked every minute.</p>
+      </div>
+      <p class="live" role="status">
+        <span class="live-dot" aria-hidden="true"></span>
+        Automatic checks every minute
+      </p>
+    </header>
+
+    <section class="panel add" aria-labelledby="add-heading">
+      <h2 id="add-heading" class="visually-hidden">Add a URL</h2>
+      <form id="add-form">
+        <label for="url">Monitor a public URL</label>
+        <div class="row">
+          <input
+            id="url"
+            name="url"
+            type="url"
+            placeholder="https://example.com"
+            required
+            autocomplete="url"
+            spellcheck="false"
+          >
+          <button type="submit">Add URL</button>
+        </div>
+        <p id="message" class="message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section aria-labelledby="monitored">
+      <div class="section-head">
+        <h2 id="monitored">Monitored URLs</h2>
+        <button id="refresh" class="btn-secondary" type="button">Refresh</button>
+      </div>
+      <div id="list" aria-live="polite">
+        <div class="state loading">Loading monitored URLs…</div>
+      </div>
+    </section>
+
+    <footer>
+      HTTP 200–399 is healthy · Checks run every 60 seconds · Status: filled circle = UP, square = DOWN, dashed diamond = PENDING
+    </footer>
+  </main>
+
+  <template id="card">
+    <article class="card">
+      <div class="card-main">
+        <div class="status-row">
+          <span class="status badge" data-role="badge">
+            <span class="badge-icon" aria-hidden="true"></span>
+            <span class="badge-label"></span>
+          </span>
+        </div>
+        <a class="url" target="_blank" rel="noopener noreferrer"></a>
+        <p class="meta"></p>
+        <p class="err" hidden></p>
+      </div>
+      <button class="btn-danger delete" type="button">Delete</button>
+    </article>
+  </template>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
