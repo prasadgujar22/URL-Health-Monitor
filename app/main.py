@@ -10,16 +10,29 @@ from .checker import check, validate_url, UnsafeURL
 async def check_one(target):
     try: result=await asyncio.wait_for(check(target['url']),timeout=5.1)
     except asyncio.TimeoutError: result=(None,5000,'DOWN','timeout')
-    store.record(target['id'],*result)
+    try: store.record(target['id'],*result)
+    except Exception: pass  # A target may have been deleted while its request was in flight.
+
+def next_deadline(deadline, now, interval=60.0):
+    deadline += interval
+    if deadline <= now:
+        deadline += (int((now-deadline)//interval)+1)*interval
+    return deadline
 
 async def scheduler():
+    interval=60.0
+    deadline=asyncio.get_running_loop().time()
     while True:
         batch=store.targets()
         sem=asyncio.Semaphore(8)
         async def bounded(item):
             async with sem: await check_one(item)
         await asyncio.gather(*(bounded(x) for x in batch),return_exceptions=True)
-        await asyncio.sleep(max(0,60))
+        now=asyncio.get_running_loop().time()
+        # If a batch runs past one or more ticks, skip missed ticks and start the
+        # next batch immediately. Never overlap batches or checks for a target.
+        deadline=next_deadline(deadline,now,interval)
+        await asyncio.sleep(max(0,deadline-now))
 
 @asynccontextmanager
 async def lifespan(app):
