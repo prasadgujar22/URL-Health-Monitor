@@ -17,9 +17,9 @@ function time(value) {
 }
 
 function statusLabel(status) {
-  if (status === 'UP') return 'Up';
-  if (status === 'DOWN') return 'Down';
-  return 'Pending';
+  if (status === 'UP') return 'UP';
+  if (status === 'DOWN') return 'DOWN';
+  return 'PENDING';
 }
 
 function statusClass(status) {
