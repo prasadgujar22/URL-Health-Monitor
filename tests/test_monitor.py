@@ -2,8 +2,8 @@ import asyncio
 import pytest
 from fastapi.testclient import TestClient
 from app import store
-from app.main import app, scheduler
-from app.checker import validate_url, UnsafeURL
+from app.main import app, scheduler, next_deadline
+from app.checker import validate_url, UnsafeURL, check
 
 @pytest.fixture(autouse=True)
 def database(tmp_path,monkeypatch):
@@ -27,8 +27,12 @@ def test_checks_retain_newest_twenty():
     assert len(rows)==20 and rows[0]['elapsed_ms']==24 and rows[-1]['elapsed_ms']==5
 
 def test_rejects_credentials_and_nonpublic_addresses():
-    for url in ['ftp://example.com','http://user:pass@example.com','http://127.0.0.1','http://[::1]','http://169.254.169.254','http://localhost']:
+    for url in ['ftp://example.com','http://user:pass@example.com','http://127.0.0.1','http://[::1]','http://169.254.169.254','http://localhost','http://[::ffff:8.8.8.8]','http://224.0.0.1','http://[ff02::1]']:
         with pytest.raises(UnsafeURL): asyncio.run(validate_url(url))
+
+def test_public_ipv6_literal_is_accepted():
+    _, host, ips = asyncio.run(validate_url('https://[2001:4860:4860::8888]/'))
+    assert host == '2001:4860:4860::8888' and ips == ['2001:4860:4860::8888']
 
 @pytest.mark.asyncio
 async def test_mixed_dns_answers_rejected(monkeypatch):
@@ -36,6 +40,46 @@ async def test_mixed_dns_answers_rejected(monkeypatch):
         return [(None,None,None,None,('8.8.8.8',port)),(None,None,None,None,('10.0.0.1',port))]
     monkeypatch.setattr(asyncio.AbstractEventLoop,'getaddrinfo',lambda self,*a,**kw: answers(*a,**kw))
     with pytest.raises(UnsafeURL): await validate_url('https://example.test')
+
+@pytest.mark.asyncio
+async def test_dns_rejects_mapped_and_multicast_answers(monkeypatch):
+    for address in ('::ffff:8.8.8.8', '224.0.0.1', 'ff02::1'):
+        async def answers(host,port,type,address=address):
+            return [(None,None,None,None,(address,port))]
+        monkeypatch.setattr(asyncio.AbstractEventLoop,'getaddrinfo',lambda self,*a,**kw: answers(*a,**kw))
+        with pytest.raises(UnsafeURL): await validate_url('https://public.example')
+
+@pytest.mark.asyncio
+async def test_single_deadline_covers_dns_and_response(monkeypatch):
+    async def slow_dns(*args, **kwargs):
+        await asyncio.sleep(.04)
+        return [(None,None,None,None,('8.8.8.8',443))]
+    monkeypatch.setattr(asyncio.AbstractEventLoop,'getaddrinfo',lambda self,*a,**kw: slow_dns(*a,**kw))
+    import aiohttp
+    class Response:
+        status=200
+        async def __aenter__(self):
+            await asyncio.sleep(.04)
+            return self
+        async def __aexit__(self,*args): pass
+    class Session:
+        def __init__(self,*args,**kwargs): pass
+        async def __aenter__(self): return self
+        async def __aexit__(self,*args): pass
+        def get(self,*args,**kwargs): return Response()
+    monkeypatch.setattr(aiohttp,'ClientSession',Session)
+    result=await check('https://public.example',deadline_seconds=.06)
+    assert result[0] is None and result[2:] == ('DOWN','timeout')
+
+def test_pending_dashboard_does_not_add_empty_class_name():
+    from pathlib import Path
+    script=(Path(__file__).parents[1]/'app/static/app.js').read_text()
+    assert "if(item.status==='UP')dot.classList.add('up');else if(item.status==='DOWN')dot.classList.add('down')" in script
+
+def test_scheduler_uses_fixed_monotonic_ticks_and_skips_missed_batches():
+    assert next_deadline(0, 10) == 60
+    assert next_deadline(0, 60) == 120
+    assert next_deadline(0, 145) == 180
 
 @pytest.mark.asyncio
 async def test_scheduler_continues_after_target_failure(monkeypatch):
