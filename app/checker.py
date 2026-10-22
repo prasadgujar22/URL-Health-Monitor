@@ -10,7 +10,9 @@ def _public_address(value):
     # Mapped IPv6 is rejected as a category, even when its embedded IPv4 is public.
     if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
         return False
-    return ip.is_global and not ip.is_multicast
+    # Python's is_global does not exclude every reserved IPv6 range (for
+    # example, 4000::/3 reports is_global=True on supported runtimes).
+    return ip.is_global and not ip.is_multicast and not ip.is_reserved
 
 async def validate_url(url):
     try:

@@ -19,20 +19,23 @@ def next_deadline(deadline, now, interval=60.0):
         deadline += (int((now-deadline)//interval)+1)*interval
     return deadline
 
-async def scheduler():
-    interval=60.0
-    deadline=asyncio.get_running_loop().time()
+async def scheduler(*, interval=60.0, clock=None, sleep=None):
+    loop=asyncio.get_running_loop()
+    clock=clock or loop.time
+    sleep=sleep or asyncio.sleep
+    deadline=clock()
     while True:
         batch=store.targets()
         sem=asyncio.Semaphore(8)
         async def bounded(item):
             async with sem: await check_one(item)
         await asyncio.gather(*(bounded(x) for x in batch),return_exceptions=True)
-        now=asyncio.get_running_loop().time()
+        now=clock()
         # If a batch runs past one or more ticks, skip missed ticks and start the
-        # next batch immediately. Never overlap batches or checks for a target.
+        # next batch at the next future tick. Never overlap batches or checks
+        # for a target.
         deadline=next_deadline(deadline,now,interval)
-        await asyncio.sleep(max(0,deadline-now))
+        await sleep(max(0,deadline-now))
 
 @asynccontextmanager
 async def lifespan(app):
