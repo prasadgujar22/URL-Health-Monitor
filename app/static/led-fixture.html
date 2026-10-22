@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LED status fixture — URL Health Monitor</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    /* Fixture-only layout chrome; LED styles come from style.css */
+    .fixture-note {
+      margin: 0 0 var(--space-4);
+      padding: var(--space-3);
+      border: var(--border-thin);
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
+    .fixture-grid {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Fixture evidence</p>
+        <h1>Status LED matrix</h1>
+        <p class="sub">Presentation-only fixture. Not emitted by the live API unless noted.</p>
+      </div>
+    </header>
+
+    <p class="fixture-note" role="note">
+      Fixture: demonstrates UP, DOWN, PENDING, CHECKING, UNKNOWN, and DISABLED LEDs for UX review.
+      Live backend currently emits UP, DOWN, and PENDING.
+    </p>
+
+    <section aria-labelledby="fixture-heading">
+      <h2 id="fixture-heading">Monitored URLs (fixture)</h2>
+      <div id="list" class="fixture-grid" aria-live="off"></div>
+    </section>
+  </main>
+
+  <template id="card">
+    <article class="card">
+      <div class="card-main">
+        <div class="status-row">
+          <span class="status badge" data-role="badge">
+            <span class="badge-icon" aria-hidden="true"></span>
+            <span class="badge-label"></span>
+          </span>
+        </div>
+        <a class="url" href="#" tabindex="-1"></a>
+        <p class="meta"></p>
+        <p class="err" hidden></p>
+      </div>
+      <button class="btn-danger delete" type="button" disabled>Delete</button>
+    </article>
+  </template>
+
+  <script>
+    const STATUS_CLASSES = {
+      UP: 'up',
+      DOWN: 'down',
+      PENDING: 'pending',
+      CHECKING: 'checking',
+      UNKNOWN: 'unknown',
+      DISABLED: 'disabled',
+    };
+
+    const fixtures = [
+      { id: 1, url: 'https://fixture.example/up', status: 'UP', http_code: 200, elapsed_ms: 42, checked_at: '2026-10-22T21:00:00Z', note: 'Live API can emit' },
+      { id: 2, url: 'https://fixture.example/down', status: 'DOWN', http_code: 503, elapsed_ms: 110, checked_at: '2026-10-22T21:00:00Z', error: 'http_error', note: 'Live API can emit' },
+      { id: 3, url: 'https://fixture.example/pending', status: 'PENDING', http_code: null, elapsed_ms: null, checked_at: null, note: 'Live API can emit' },
+      { id: 4, url: 'https://fixture.example/checking', status: 'CHECKING', http_code: null, elapsed_ms: null, checked_at: null, note: 'Fixture-only (not emitted by backend today)' },
+      { id: 5, url: 'https://fixture.example/unknown', status: 'UNKNOWN', http_code: null, elapsed_ms: null, checked_at: null, note: 'Fixture-only + unknown fallback path' },
+      { id: 6, url: 'https://fixture.example/disabled', status: 'DISABLED', http_code: null, elapsed_ms: null, checked_at: null, note: 'Fixture-only (not emitted by backend today)' },
+    ];
+
+    const list = document.querySelector('#list');
+    for (const item of fixtures) {
+      const card = document.querySelector('#card').content.cloneNode(true);
+      const el = card.querySelector('.card');
+      const dot = card.querySelector('.status');
+      const label = card.querySelector('.badge-label');
+      const link = card.querySelector('.url');
+      const err = card.querySelector('.err');
+      const status = item.status;
+      const cls = STATUS_CLASSES[status];
+
+      el.dataset.id = String(item.id);
+      if (item.status === 'UP') dot.classList.add('up');
+      else if (item.status === 'DOWN') dot.classList.add('down');
+      if (!dot.classList.contains(cls)) dot.classList.add(cls);
+      dot.setAttribute('aria-label', `Status: ${status}`);
+      label.textContent = status;
+      link.textContent = item.url;
+      link.removeAttribute('href');
+      card.querySelector('.meta').textContent = item.note;
+      if (item.error) {
+        err.hidden = false;
+        err.textContent = `Check failed: ${item.error.replaceAll('_', ' ')}`;
+      }
+      list.append(card);
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,5 @@
-/* Pure black-and-white UI — PRA-143
-   Palette: #000000 and #FFFFFF only. No grey, colour, gradients, or coloured shadows.
-   Hierarchy via weight, size, borders, inversion, and patterns — never grey opacity. */
+/* Black-and-white UI with colour exception only for monitoring status LEDs (PRA-152).
+   Everything else: #000000 / #FFFFFF. Hierarchy via weight, size, borders, inversion. */
 
 :root {
   --color-black: #000000;
@@ -13,6 +12,26 @@
   --color-accent: var(--color-black);
   --color-accent-text: var(--color-white);
   --color-focus: var(--color-black);
+
+  /* Status LED tokens — sole colour exception (visible on white) */
+  --led-size: 0.75rem;
+  --led-up-core: #b8ff9a;
+  --led-up-mid: #22c55e;
+  --led-up-edge: #15803d;
+  --led-up-glow: rgba(34, 197, 94, 0.55);
+  --led-up-halo: rgba(34, 197, 94, 0.28);
+  --led-down-core: #ffb4b4;
+  --led-down-mid: #ef4444;
+  --led-down-edge: #b91c1c;
+  --led-down-glow: rgba(239, 68, 68, 0.55);
+  --led-down-halo: rgba(239, 68, 68, 0.28);
+  --led-amber-core: #ffe9a8;
+  --led-amber-mid: #f59e0b;
+  --led-amber-edge: #b45309;
+  --led-amber-glow: rgba(245, 158, 11, 0.55);
+  --led-amber-halo: rgba(245, 158, 11, 0.28);
+  --led-unlit-fill: var(--color-white);
+  --led-unlit-outline: var(--color-black);
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -351,36 +370,74 @@ a:focus-visible {
   color: var(--color-black);
 }
 
-/* Status shapes — distinct geometry, text always present */
+/* Status LEDs — colour exception; black text label always present */
 .badge-icon {
   display: inline-block;
-  width: 0.75rem;
-  height: 0.75rem;
+  width: var(--led-size);
+  height: var(--led-size);
   flex: none;
-  background: var(--color-black);
-}
-
-/* UP: filled circle */
-.badge.up .badge-icon {
   border-radius: 50%;
+  border: 1px solid transparent;
+  background: var(--led-unlit-fill);
+  box-shadow: none;
 }
 
-/* DOWN: filled square */
+.badge.up .badge-icon {
+  border-color: var(--led-up-edge);
+  background:
+    radial-gradient(circle at 32% 28%, var(--color-white) 0 18%, var(--led-up-core) 28%, var(--led-up-mid) 62%, var(--led-up-edge) 100%);
+  box-shadow:
+    0 0 0.35rem 0.1rem var(--led-up-glow),
+    0 0 0.75rem 0.2rem var(--led-up-halo);
+}
+
 .badge.down .badge-icon {
-  border-radius: 0;
+  border-color: var(--led-down-edge);
+  background:
+    radial-gradient(circle at 32% 28%, var(--color-white) 0 18%, var(--led-down-core) 28%, var(--led-down-mid) 62%, var(--led-down-edge) 100%);
+  box-shadow:
+    0 0 0.35rem 0.1rem var(--led-down-glow),
+    0 0 0.75rem 0.2rem var(--led-down-halo);
 }
 
-/* PENDING: hollow diamond (rotated square outline) */
-.badge.pending {
-  border-style: dashed;
+/* PENDING / CHECKING: amber LED (CHECKING may pulse) */
+.badge.pending .badge-icon,
+.badge.checking .badge-icon {
+  border-color: var(--led-amber-edge);
+  background:
+    radial-gradient(circle at 32% 28%, var(--color-white) 0 18%, var(--led-amber-core) 28%, var(--led-amber-mid) 62%, var(--led-amber-edge) 100%);
+  box-shadow:
+    0 0 0.35rem 0.1rem var(--led-amber-glow),
+    0 0 0.75rem 0.2rem var(--led-amber-halo);
 }
 
-.badge.pending .badge-icon {
-  width: 0.65rem;
-  height: 0.65rem;
-  background: var(--color-white);
-  border: var(--border-thin);
-  transform: rotate(45deg);
+@media (prefers-reduced-motion: no-preference) {
+  .badge.checking .badge-icon {
+    animation: led-checking-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes led-checking-pulse {
+  0%, 100% {
+    filter: brightness(1);
+    box-shadow:
+      0 0 0.35rem 0.1rem var(--led-amber-glow),
+      0 0 0.75rem 0.2rem var(--led-amber-halo);
+  }
+  50% {
+    filter: brightness(1.12);
+    box-shadow:
+      0 0 0.5rem 0.16rem var(--led-amber-glow),
+      0 0 1rem 0.28rem var(--led-amber-halo);
+  }
+}
+
+/* UNKNOWN / DISABLED: unlit white with black outline */
+.badge.unknown .badge-icon,
+.badge.disabled .badge-icon {
+  background: var(--led-unlit-fill);
+  border: 1.5px solid var(--led-unlit-outline);
+  box-shadow: none;
 }
 
 .url {

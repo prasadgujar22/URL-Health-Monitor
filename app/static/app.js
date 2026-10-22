@@ -16,10 +16,28 @@ function time(value) {
   }
 }
 
+const STATUS_CLASSES = {
+  UP: 'up',
+  DOWN: 'down',
+  PENDING: 'pending',
+  CHECKING: 'checking',
+  UNKNOWN: 'unknown',
+  DISABLED: 'disabled',
+};
+
+function normalizeStatus(status) {
+  const key = typeof status === 'string' ? status.trim().toUpperCase() : '';
+  if (STATUS_CLASSES[key]) return key;
+  if (!key) return 'PENDING';
+  return 'UNKNOWN';
+}
+
 function statusLabel(status) {
-  if (status === 'UP') return 'UP';
-  if (status === 'DOWN') return 'DOWN';
-  return 'PENDING';
+  return normalizeStatus(status);
+}
+
+function statusClass(status) {
+  return STATUS_CLASSES[normalizeStatus(status)];
 }
 
 function setState(className, content) {
@@ -55,22 +73,29 @@ async function refresh() {
       const label = card.querySelector('.badge-label');
       const link = card.querySelector('.url');
       const err = card.querySelector('.err');
-      const status = item.status || 'PENDING';
+      const status = normalizeStatus(item.status);
 
       el.dataset.id = item.id;
       // Exact main guard (also required by tests/test_monitor.py substring assertion).
       if(item.status==='UP')dot.classList.add('up');else if(item.status==='DOWN')dot.classList.add('down');
-      if (status === 'PENDING') dot.classList.add('pending');
+      const ledClass = statusClass(status);
+      if (!dot.classList.contains(ledClass)) dot.classList.add(ledClass);
       dot.setAttribute('aria-label', `Status: ${statusLabel(status)}`);
       if (label) label.textContent = statusLabel(status);
 
       link.textContent = item.url;
       link.href = item.url;
 
-      const pending = status === 'PENDING' || !item.status;
-      card.querySelector('.meta').textContent = pending
+      const pending = status === 'PENDING' || status === 'CHECKING';
+      card.querySelector('.meta').textContent = status === 'PENDING' && !item.checked_at
         ? 'Pending first check'
-        : `${statusLabel(status)} · ${item.http_code === null ? 'No HTTP response' : `HTTP ${item.http_code}`} · ${item.elapsed_ms} ms · ${time(item.checked_at)}`;
+        : status === 'CHECKING'
+          ? 'Check in progress'
+          : status === 'DISABLED'
+            ? 'Monitoring disabled'
+            : status === 'UNKNOWN'
+              ? 'Status unknown'
+              : `${statusLabel(status)} · ${item.http_code === null || item.http_code === undefined ? 'No HTTP response' : `HTTP ${item.http_code}`} · ${item.elapsed_ms ?? '—'} ms · ${time(item.checked_at)}`;
 
       if (item.error) {
         err.hidden = false;
