@@ -447,12 +447,37 @@ footer {
 
   .add { padding: var(--space-4); }
 
-  .row { flex-direction: column; }
+  .row { flex-direction: column; align-items: stretch; }
+
+  /* Column layout: drop the desktop flex-basis (12rem) so height stays ~44px */
+  input[type="url"] {
+    flex: 0 0 auto;
+    flex-basis: auto;
+    width: 100%;
+    min-height: 2.75rem;
+    height: auto;
+  }
 
   button[type="submit"],
-  .btn-secondary,
   .btn-danger {
     width: 100%;
+  }
+
+  /* Keep Refresh compact beside the section heading */
+  .section-head {
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+
+  .section-head h2 {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .section-head .btn-secondary {
+    width: auto;
+    flex: 0 0 auto;
+    padding-inline: var(--space-3);
   }
 
   .card {
