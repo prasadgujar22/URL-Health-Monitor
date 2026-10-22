@@ -225,10 +225,11 @@ button {
   border: var(--border-thin);
   border-radius: 0;
   cursor: pointer;
-  transition: background var(--motion), color var(--motion), outline-offset var(--motion);
+  /* Geometry-only motion: never interpolate background/color (avoids grey mid-hover). */
+  transition: outline-offset var(--motion);
 }
 
-/* Primary: black fill, white text — hover inverts */
+/* Primary: black fill, white text — hover inverts immediately (no colour transition) */
 button:hover:not(:disabled) {
   background: var(--color-white);
   color: var(--color-black);
@@ -241,16 +242,10 @@ button:active:not(:disabled) {
 
 button:disabled {
   cursor: not-allowed;
+  /* Plain white + black text + dashed border — no gradients/patterns */
   background: var(--color-white);
+  background-image: none;
   color: var(--color-black);
-  /* Pattern instead of grey: diagonal hatch */
-  background-image: repeating-linear-gradient(
-    -45deg,
-    var(--color-white) 0,
-    var(--color-white) 4px,
-    var(--color-black) 4px,
-    var(--color-black) 5px
-  );
   border-style: dashed;
 }
 
