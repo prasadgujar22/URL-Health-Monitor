@@ -1,4 +1,5 @@
-/* Inverted monochrome themes. Only monitoring status LEDs use colour. */
+/* Retro 1-bit UI on the inverted monochrome themes.
+   Only monitoring status LEDs use colour; every retro effect reuses the same tokens. */
 
 :root {
   --color-black: #000000;
@@ -34,6 +35,7 @@
 
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-retro: "Courier New", Courier, var(--font-mono);
 
   --text-xs: 0.75rem;    /* 12px */
   --text-sm: 0.875rem;   /* 14px */
@@ -56,10 +58,15 @@
   --radius-md: 0;
   --radius-lg: 0;
 
-  --border-thin: 1px solid var(--color-border);
-  --border-thick: 2px solid var(--color-border);
-  --focus-outline: 3px solid var(--color-focus);
-  --focus-offset: 2px;
+  --border-thin: 2px solid var(--color-border);
+  --border-thick: 3px solid var(--color-border);
+  --focus-outline: 3px dashed var(--color-focus);
+  --focus-offset: 3px;
+
+  /* Hard, unblurred offset shadows in the text colour */
+  --shadow-offset: 4px;
+  --shadow-hard: var(--shadow-offset) var(--shadow-offset) 0 0 var(--color-text);
+  --shadow-small: 2px 2px 0 0 var(--color-text);
 
   --motion: 150ms ease;
 }
@@ -101,12 +108,15 @@ html { color-scheme: light; }
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: var(--font-sans);
+  font-family: var(--font-retro);
   font-size: var(--text-md);
   line-height: var(--lh);
   color: var(--color-text);
-  background: var(--color-bg);
-  -webkit-font-smoothing: antialiased;
+  /* 1-bit dot grid desktop: same two colours, no tints */
+  background-color: var(--color-bg);
+  background-image: radial-gradient(var(--color-text) 1px, transparent 1.5px);
+  background-size: 8px 8px;
+  -webkit-font-smoothing: none;
 }
 
 .visually-hidden {
@@ -633,3 +643,166 @@ footer {
     gap: var(--space-3);
   }
 }
+
+/* ---------- Retro chrome ---------- */
+
+/* Header reads like a classic window title bar: striped rails around a solid label. */
+header {
+  position: relative;
+  padding: var(--space-5);
+  background: var(--color-bg);
+  border: var(--border-thin);
+  box-shadow: var(--shadow-hard);
+}
+
+header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 0.75rem;
+  border-bottom: var(--border-thin);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--color-text) 0 2px,
+    var(--color-bg) 2px 4px
+  );
+}
+
+header > div:first-child { padding-top: var(--space-3); }
+.header-controls { padding-top: var(--space-3); }
+
+.eyebrow::before { content: "> "; }
+
+h1 {
+  font-family: var(--font-retro);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-shadow: 3px 3px 0 var(--color-bg), 4px 4px 0 var(--color-text);
+}
+
+/* Terminal cursor */
+h1::after {
+  content: "_";
+  margin-left: 0.1em;
+  text-shadow: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  h1::after { animation: cursor-blink 1s steps(1, end) infinite; }
+}
+
+@keyframes cursor-blink {
+  50% { opacity: 0; }
+}
+
+h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+h2::before { content: "\25A0  "; } /* ■ */
+
+/* Section titles sit on a solid label so the dot grid never runs through the text */
+.section-head h2 {
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-bg);
+  border: var(--border-thin);
+  box-shadow: var(--shadow-small);
+  flex: 0 1 auto;
+}
+
+.live {
+  box-shadow: var(--shadow-small);
+  text-transform: uppercase;
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+}
+
+/* Blink instead of a smooth pulse */
+@media (prefers-reduced-motion: no-preference) {
+  .live-dot { animation: cursor-blink 1.2s steps(1, end) infinite; }
+}
+
+.panel,
+.card,
+.state,
+footer {
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow-hard);
+}
+
+.card {
+  border-width: 2px;
+}
+
+.card:focus-within {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-offset);
+}
+
+/* Sunken input field */
+input[type="url"],
+.theme-control select {
+  box-shadow: inset 3px 3px 0 0 var(--color-text);
+  padding-left: var(--space-4);
+}
+
+/* Chunky buttons that physically press down */
+button {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  box-shadow: var(--shadow-small);
+  transition: transform var(--motion), box-shadow var(--motion);
+}
+
+button:active:not(:disabled) {
+  outline: none;
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+button:disabled { box-shadow: none; }
+
+.badge {
+  font-family: var(--font-retro);
+  border-width: 2px;
+}
+
+.badge-label::before { content: "["; }
+.badge-label::after { content: "]"; }
+
+.url::before { content: "\00BB"; display: inline-block; margin-right: 0.5em; text-decoration: none; } /* » */
+
+.meta { font-family: var(--font-retro); }
+
+.message.error,
+.err {
+  box-shadow: inset 6px 0 0 var(--color-text);
+}
+
+/* Square, stepped "hourglass" spinner */
+.state.loading::before {
+  border-radius: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .state.loading::before { animation: spin 1.2s steps(4, end) infinite; }
+}
+
+.state.error-state {
+  box-shadow: inset 6px 0 0 var(--color-text), var(--shadow-hard);
+}
+
+footer {
+  padding: var(--space-3) var(--space-4);
+  border: var(--border-thin);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 36rem) {
+  :root { --shadow-offset: 3px; }
+  header { padding: var(--space-4); }
+}
+
