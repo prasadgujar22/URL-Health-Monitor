@@ -4,9 +4,19 @@ const vm = require('node:vm');
 const fs = require('node:fs');
 
 function node() {
+  const tokens = new Set();
   return {
     className: '', textContent: '', href: '', dataset: {}, attrs: {}, children: [], listeners: {},
-    classList: { add(value) { if (!value) throw new Error('empty class token'); }, toggle() {} },
+    classList: {
+      add(value) {
+        if (!value) throw new Error('empty class token');
+        tokens.add(value);
+      },
+      contains(value) {
+        return tokens.has(value);
+      },
+      toggle() {},
+    },
     setAttribute(key, value) { this.attrs[key] = value; },
     addEventListener(key, handler) { this.listeners[key] = handler; },
     append(...items) { this.children.push(...items); },
@@ -18,7 +28,9 @@ const list = node(), form = node(), message = node(), refresh = node();
 form.querySelector = () => node();
 let cards = [];
 const template = { content: { cloneNode() {
-  const parts = Object.fromEntries(['.card', '.status', '.url', '.meta', '.err', '.delete'].map(key => [key, node()]));
+  const parts = Object.fromEntries(
+    ['.card', '.status', '.badge-label', '.url', '.meta', '.err', '.delete'].map(key => [key, node()]),
+  );
   parts['.card'].parts = parts;
   const fragment = node(); fragment.parts = parts;
   fragment.querySelector = key => parts[key];
@@ -43,6 +55,12 @@ setImmediate(() => {
   assert.equal(cards[0]['.meta'].textContent, 'Pending first check');
   assert.equal(cards[1]['.meta'].textContent.startsWith('UP'), true);
   assert.equal(cards[2]['.meta'].textContent.startsWith('DOWN'), true);
+  assert.equal(cards[0]['.badge-label'].textContent, 'PENDING');
+  assert.equal(cards[1]['.badge-label'].textContent, 'UP');
+  assert.equal(cards[2]['.badge-label'].textContent, 'DOWN');
+  assert.equal(cards[0]['.status'].classList.contains('pending'), true);
+  assert.equal(cards[1]['.status'].classList.contains('up'), true);
+  assert.equal(cards[2]['.status'].classList.contains('down'), true);
   for (const card of cards) assert.equal(typeof card['.delete'].listeners.click, 'function');
   console.log('dashboard pending/UP/DOWN and delete regression passed');
 });
